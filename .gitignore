@@ -1,5 +1,7 @@
 node_modules/
 .env
 .env.*
-sql/
+sql/rets_*.sql
 .DS_Store
+frontend/build/
+backend/jobs/
