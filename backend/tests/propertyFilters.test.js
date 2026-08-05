@@ -58,6 +58,17 @@ test("buildWhereClause maps params to MLS columns with placeholders", () => {
   assert.deepEqual(values, ["Portland", "97201", 300000, 900000, 3, 2]);
 });
 
+test("buildWhereClause supports minBeds/minBaths as greater-or-equal", () => {
+  const { whereSql, values } = buildWhereClause({
+    minBeds: 6,
+    minBaths: 6,
+  });
+
+  assert.match(whereSql, /CAST\(L_Keyword2 AS UNSIGNED\) >= \?/);
+  assert.match(whereSql, /CAST\(LM_Dec_3 AS UNSIGNED\) >= \?/);
+  assert.deepEqual(values, [6, 6]);
+});
+
 async function startTestServer() {
   const app = require("../server");
   const server = http.createServer(app);

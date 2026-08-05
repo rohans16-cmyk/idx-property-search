@@ -89,6 +89,16 @@ function parseQueryParams(query) {
     return { error: bathsResult.error };
   }
 
+  const minBedsResult = parseNonNegativeInt(query.minBeds, "minBeds");
+  if (minBedsResult.error) {
+    return { error: minBedsResult.error };
+  }
+
+  const minBathsResult = parseNonNegativeInt(query.minBaths, "minBaths");
+  if (minBathsResult.error) {
+    return { error: minBathsResult.error };
+  }
+
   const minPrice = minPriceResult.value;
   const maxPrice = maxPriceResult.value;
 
@@ -98,6 +108,20 @@ function parseQueryParams(query) {
     minPrice > maxPrice
   ) {
     return { error: "minPrice cannot be greater than maxPrice" };
+  }
+
+  if (
+    bedsResult.value !== undefined &&
+    minBedsResult.value !== undefined
+  ) {
+    return { error: "beds and minBeds cannot be used together" };
+  }
+
+  if (
+    bathsResult.value !== undefined &&
+    minBathsResult.value !== undefined
+  ) {
+    return { error: "baths and minBaths cannot be used together" };
   }
 
   const city =
@@ -127,6 +151,8 @@ function parseQueryParams(query) {
       maxPrice,
       beds: bedsResult.value,
       baths: bathsResult.value,
+      minBeds: minBedsResult.value,
+      minBaths: minBathsResult.value,
     },
   };
 }
@@ -160,9 +186,19 @@ function buildWhereClause(filters) {
     values.push(filters.beds);
   }
 
+  if (filters.minBeds !== undefined) {
+    conditions.push("CAST(L_Keyword2 AS UNSIGNED) >= ?");
+    values.push(filters.minBeds);
+  }
+
   if (filters.baths !== undefined) {
     conditions.push("CAST(LM_Dec_3 AS UNSIGNED) = ?");
     values.push(filters.baths);
+  }
+
+  if (filters.minBaths !== undefined) {
+    conditions.push("CAST(LM_Dec_3 AS UNSIGNED) >= ?");
+    values.push(filters.minBaths);
   }
 
   const whereSql =
