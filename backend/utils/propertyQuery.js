@@ -1,6 +1,20 @@
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
 
+/**
+ * Whitelist of actual rets_property column names allowed for sortBy.
+ * ORDER BY expressions may CAST text-ish MLS columns for numeric order.
+ */
+const SORT_COLUMNS = {
+  L_SystemPrice: "L_SystemPrice",
+  ListingContractDate: "ListingContractDate",
+  LM_Int2_3: "LM_Int2_3",
+  L_Keyword2: "CAST(L_Keyword2 AS UNSIGNED)",
+};
+
+const DEFAULT_SORT_BY = "L_ListingID";
+const DEFAULT_SORT_ORDER = "ASC";
+
 function parseNonNegativeInt(value, fieldName) {
   if (value === undefined || value === "") {
     return { value: undefined };
@@ -141,9 +155,17 @@ function parseQueryParams(query) {
     return { error: "zipcode cannot be empty" };
   }
 
+  const sortResult = parseSortParams(query.sortBy, query.sortOrder);
+  if (sortResult.error) {
+    return { error: sortResult.error };
+  }
+
   return {
     limit,
     offset,
+    sortBy: sortResult.sortBy,
+    sortOrder: sortResult.sortOrder,
+    orderBySql: sortResult.orderBySql,
     filters: {
       city,
       zipcode,
@@ -154,6 +176,47 @@ function parseQueryParams(query) {
       minBeds: minBedsResult.value,
       minBaths: minBathsResult.value,
     },
+  };
+}
+
+function parseSortParams(sortByRaw, sortOrderRaw) {
+  const hasSortBy = sortByRaw !== undefined && sortByRaw !== "";
+  const hasSortOrder = sortOrderRaw !== undefined && sortOrderRaw !== "";
+
+  if (!hasSortBy && !hasSortOrder) {
+    return {
+      sortBy: DEFAULT_SORT_BY,
+      sortOrder: DEFAULT_SORT_ORDER,
+      orderBySql: `${DEFAULT_SORT_BY} ${DEFAULT_SORT_ORDER}`,
+    };
+  }
+
+  if (!hasSortBy) {
+    return { error: "sortBy is required when sortOrder is provided" };
+  }
+
+  const sortBy = String(sortByRaw).trim();
+  if (!Object.prototype.hasOwnProperty.call(SORT_COLUMNS, sortBy)) {
+    return {
+      error: `sortBy must be one of: ${Object.keys(SORT_COLUMNS).join(", ")}`,
+    };
+  }
+
+  let sortOrder = DEFAULT_SORT_ORDER;
+  if (hasSortOrder) {
+    const normalized = String(sortOrderRaw).trim().toUpperCase();
+    if (normalized !== "ASC" && normalized !== "DESC") {
+      return { error: "sortOrder must be ASC or DESC" };
+    }
+    sortOrder = normalized;
+  }
+
+  const columnExpr = SORT_COLUMNS[sortBy];
+  // Tie-break on listing id so pagination stays stable when values collide.
+  return {
+    sortBy,
+    sortOrder,
+    orderBySql: `${columnExpr} ${sortOrder}, L_ListingID ASC`,
   };
 }
 
@@ -210,6 +273,10 @@ function buildWhereClause(filters) {
 module.exports = {
   DEFAULT_LIMIT,
   MAX_LIMIT,
+  SORT_COLUMNS,
+  DEFAULT_SORT_BY,
+  DEFAULT_SORT_ORDER,
   parseQueryParams,
+  parseSortParams,
   buildWhereClause,
 };

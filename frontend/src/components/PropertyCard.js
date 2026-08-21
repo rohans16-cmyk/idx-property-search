@@ -9,11 +9,24 @@ function formatBedsBathsSqft(property) {
   return `${beds} bd · ${baths} ba · ${sqft} sqft`;
 }
 
-export default function PropertyCard({ property }) {
+export default function PropertyCard({
+  property,
+  isFavorite = false,
+  onToggleFavorite,
+}) {
   const listingId = property.L_ListingID || property.id;
   const location = [property.L_City, property.L_State]
     .filter(Boolean)
     .join(", ");
+
+  function handleFavoriteClick(event) {
+    // Heart must not navigate to the detail page.
+    event.preventDefault();
+    event.stopPropagation();
+    if (typeof onToggleFavorite === "function") {
+      onToggleFavorite(listingId);
+    }
+  }
 
   return (
     <article className="property-card">
@@ -26,6 +39,21 @@ export default function PropertyCard({ property }) {
             photos={property.L_Photos}
             alt={property.L_Address || "Property"}
           />
+          {typeof onToggleFavorite === "function" && (
+            <button
+              type="button"
+              className={
+                isFavorite
+                  ? "property-card__favorite property-card__favorite--active"
+                  : "property-card__favorite"
+              }
+              aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+              aria-pressed={isFavorite}
+              onClick={handleFavoriteClick}
+            >
+              {isFavorite ? "♥" : "♡"}
+            </button>
+          )}
         </div>
         <div className="property-card__body">
           <p className="property-card__price">

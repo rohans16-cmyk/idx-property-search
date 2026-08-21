@@ -39,6 +39,38 @@ test("parseQueryParams rejects invalid numeric filters", () => {
   );
 });
 
+test("parseQueryParams accepts whitelisted sortBy column names", () => {
+  const parsed = parseQueryParams({
+    sortBy: "L_SystemPrice",
+    sortOrder: "DESC",
+  });
+  assert.equal(parsed.error, undefined);
+  assert.equal(parsed.sortBy, "L_SystemPrice");
+  assert.equal(parsed.sortOrder, "DESC");
+  assert.match(parsed.orderBySql, /L_SystemPrice DESC/);
+});
+
+test("parseQueryParams rejects invalid sortBy / sortOrder", () => {
+  assert.match(
+    parseQueryParams({ sortBy: "ListPrice" }).error,
+    /sortBy must be one of/
+  );
+  assert.equal(
+    parseQueryParams({ sortBy: "L_SystemPrice", sortOrder: "UP" }).error,
+    "sortOrder must be ASC or DESC"
+  );
+  assert.equal(
+    parseQueryParams({ sortOrder: "ASC" }).error,
+    "sortBy is required when sortOrder is provided"
+  );
+});
+
+test("parseQueryParams defaults sort to L_ListingID ASC", () => {
+  const parsed = parseQueryParams({});
+  assert.equal(parsed.sortBy, "L_ListingID");
+  assert.equal(parsed.sortOrder, "ASC");
+});
+
 test("buildWhereClause maps params to MLS columns with placeholders", () => {
   const { whereSql, values } = buildWhereClause({
     city: "Portland",
@@ -173,6 +205,64 @@ test("API validation: invalid inputs return 400", async (t) => {
     );
     assert.equal(badPrice.status, 400);
     assert.ok((await badPrice.json()).error);
+
+    const badSort = await fetch(
+      `${server.baseUrl}/api/properties?sortBy=ListPrice`
+    );
+    assert.equal(badSort.status, 400);
+    assert.match((await badSort.json()).error, /sortBy must be one of/);
+  } finally {
+    if (server) {
+      await server.close();
+    }
+  }
+});
+
+test("API sorting: price ASC/DESC and invalid sort rejected", async (t) => {
+  let server;
+
+  try {
+    server = await startTestServer();
+  } catch (error) {
+    t.skip(`Unable to start API server: ${error.message}`);
+    return;
+  }
+
+  try {
+    const health = await fetch(`${server.baseUrl}/api/health`);
+    const healthBody = await health.json();
+    if (!health.ok || healthBody.database !== "connected") {
+      t.skip("Database unavailable — start idx-mysql-local and retry");
+      return;
+    }
+
+    const ascRes = await fetch(
+      `${server.baseUrl}/api/properties?sortBy=L_SystemPrice&sortOrder=ASC&limit=5`
+    );
+    assert.equal(ascRes.status, 200);
+    const ascBody = await ascRes.json();
+    assert.equal(ascBody.sortBy, "L_SystemPrice");
+    assert.equal(ascBody.sortOrder, "ASC");
+    assert.ok(ascBody.results.length >= 2);
+
+    for (let i = 1; i < ascBody.results.length; i += 1) {
+      assert.ok(
+        Number(ascBody.results[i].L_SystemPrice) >=
+          Number(ascBody.results[i - 1].L_SystemPrice)
+      );
+    }
+
+    const descRes = await fetch(
+      `${server.baseUrl}/api/properties?sortBy=L_SystemPrice&sortOrder=DESC&limit=5`
+    );
+    assert.equal(descRes.status, 200);
+    const descBody = await descRes.json();
+    for (let i = 1; i < descBody.results.length; i += 1) {
+      assert.ok(
+        Number(descBody.results[i].L_SystemPrice) <=
+          Number(descBody.results[i - 1].L_SystemPrice)
+      );
+    }
   } finally {
     if (server) {
       await server.close();

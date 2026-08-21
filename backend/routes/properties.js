@@ -27,7 +27,7 @@ router.get("/", async (req, res) => {
     return res.status(400).json({ error: parsed.error });
   }
 
-  const { limit, offset, filters } = parsed;
+  const { limit, offset, filters, sortBy, sortOrder, orderBySql } = parsed;
   const { whereSql, values: filterValues } = buildWhereClause(filters);
 
   try {
@@ -35,11 +35,12 @@ router.get("/", async (req, res) => {
     const [countRows] = await pool.query(countSql, filterValues);
     const total = Number(countRows[0].total);
 
+    // orderBySql is built only from the sort whitelist — never from raw user input.
     const selectSql = `
       SELECT ${LIST_SELECT_FIELDS}
       FROM rets_property
       ${whereSql}
-      ORDER BY L_ListingID
+      ORDER BY ${orderBySql}
       LIMIT ? OFFSET ?
     `;
     const [results] = await pool.query(selectSql, [
@@ -48,7 +49,14 @@ router.get("/", async (req, res) => {
       offset,
     ]);
 
-    return res.json({ total, limit, offset, results });
+    return res.json({
+      total,
+      limit,
+      offset,
+      sortBy,
+      sortOrder,
+      results,
+    });
   } catch (error) {
     console.error("Property search failed:", error.message);
     return res.status(500).json({
