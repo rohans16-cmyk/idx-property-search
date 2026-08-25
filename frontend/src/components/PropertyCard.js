@@ -1,3 +1,4 @@
+import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
 import { formatNumber, formatPrice } from "../utils/format";
 import PropertyImageCarousel from "./PropertyImageCarousel";
@@ -20,7 +21,6 @@ export default function PropertyCard({
     .join(", ");
 
   function handleFavoriteClick(event) {
-    // Heart must not navigate to the detail page.
     event.preventDefault();
     event.stopPropagation();
     if (typeof onToggleFavorite === "function") {
@@ -69,3 +69,23 @@ export default function PropertyCard({
     </article>
   );
 }
+
+PropertyCard.propTypes = {
+  property: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    L_ListingID: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    L_Address: PropTypes.string,
+    L_City: PropTypes.string,
+    L_State: PropTypes.string,
+    L_SystemPrice: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    L_Keyword2: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    LM_Dec_3: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    LM_Int2_3: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    L_Photos: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.arrayOf(PropTypes.string),
+    ]),
+  }).isRequired,
+  isFavorite: PropTypes.bool,
+  onToggleFavorite: PropTypes.func,
+};
