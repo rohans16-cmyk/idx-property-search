@@ -35,6 +35,14 @@ Professional Git history and a maintainable frontend layout.
 
 ## Lint
 
+From the repo root:
+
+```bash
+npm run lint
+```
+
+Or separately:
+
 ```bash
 cd frontend && npm run lint
 cd backend && npm run lint
