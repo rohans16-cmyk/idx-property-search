@@ -1,0 +1,8 @@
+{
+  "name": "idx-property-search",
+  "private": true,
+  "scripts": {
+    "lint": "npm run lint --prefix frontend && npm run lint --prefix backend",
+    "test": "npm test --prefix backend && CI=true npm test --prefix frontend -- --watchAll=false"
+  }
+}
