@@ -66,7 +66,7 @@ Required components exceed 70%:
 - [x] API reference with example requests/responses
 - [x] Database schema summary
 - [x] Known issues and future improvements
-- [ ] Screenshot — add `docs/screenshots/listings.png` before Week 12 demo
+- [x] Screenshot — `docs/screenshots/listings.png`
 
 ## Checkpoint
 

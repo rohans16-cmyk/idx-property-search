@@ -4,8 +4,6 @@ A full-stack MLS property search application built during the IDX Exchange SDE i
 
 ![Listings page](docs/screenshots/listings.png)
 
-> Add a screenshot at `docs/screenshots/listings.png` after running the app locally (search → filter → paginate → detail).
-
 ## Tech stack
 
 | Layer | Technology | Version |
