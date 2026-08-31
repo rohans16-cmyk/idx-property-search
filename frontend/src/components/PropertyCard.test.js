@@ -35,6 +35,25 @@ test("favorite heart toggles without navigating", () => {
   expect(onToggleFavorite).toHaveBeenCalledWith("111");
 });
 
+test("renders property data and links to the detail page", () => {
+  render(
+    <MemoryRouter
+      initialEntries={["/"]}
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
+      <PropertyCard property={sample} />
+    </MemoryRouter>
+  );
+
+  expect(screen.getByText("$450,000")).toBeInTheDocument();
+  expect(screen.getByText("123 Main St")).toBeInTheDocument();
+  expect(screen.getByText("Austin, TX")).toBeInTheDocument();
+  expect(screen.getByText("3 bd · 2 ba · 1,800 sqft")).toBeInTheDocument();
+
+  const link = screen.getByRole("link", { name: /123 Main St/i });
+  expect(link).toHaveAttribute("href", "/property/111");
+});
+
 test("filled heart reflects favorite state", () => {
   render(
     <MemoryRouter

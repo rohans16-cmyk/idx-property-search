@@ -5,3 +5,5 @@ sql/rets_*.sql
 .DS_Store
 frontend/build/
 backend/jobs/
+coverage/
+backend/coverage/
