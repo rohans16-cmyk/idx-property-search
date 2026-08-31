@@ -225,6 +225,7 @@ function buildWhereClause(filters) {
   const values = [];
 
   if (filters.city !== undefined) {
+    // MLS city strings vary in casing ("portland" vs "Portland"); normalize both sides.
     conditions.push("LOWER(TRIM(L_City)) = LOWER(TRIM(?))");
     values.push(filters.city);
   }
